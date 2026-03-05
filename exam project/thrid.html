@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康方案推薦</title>
+    <!-- 引入圖示庫 FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* 預設變數，會透過 JS 動態修改 */
+            --theme-color: #FFCC00; 
+            --theme-bg: #FFF9E6;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --bg-body: #F5F7FA;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            padding-bottom: 80px; /* 為底部按鈕留空間 */
+        }
+
+        /* --- 頂部區域 (動態顏色) --- */
+        header {
+            background-color: var(--theme-color);
+            color: #fff;
+            padding: 24px 20px 60px 20px; /* 底部留白給卡片疊上去 */
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            transition: background-color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-content h1 {
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .header-content p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* --- 模擬控制器 (實際上線需移除) --- */
+        .dev-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        .dev-controls select {
+            font-size: 10px;
+            padding: 2px;
+        }
+
+        /* --- 主要內容區 (卡片上浮效果) --- */
+        main {
+            padding: 0 16px;
+            margin-top: -40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--card-shadow);
+            animation: slideUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* 卡片出現動畫延遲 */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 12px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--theme-bg);
+            color: var(--theme-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* 列表樣式 */
+        ul.advice-list {
+            list-style: none;
+        }
+
+        ul.advice-list li {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        ul.advice-list li::before {
+            content: "•";
+            color: var(--theme-color);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .sub-section {
+            margin-top: 16px;
+        }
+        
+        .sub-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        .tag.danger {
+            background: #FFF0F0;
+            color: #FF3B30;
+        }
+
+        /* --- 底部固定按鈕 --- */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 12px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 12px;
+            z-index: 99;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--theme-color);
+            color: white;
+            flex: 2;
+        }
+
+        .btn-secondary {
+            background-color: #F2F2F7;
+            color: var(--text-main);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部區域 -->
+    <header id="main-header">
+        <!-- 開發者控制面板 (實際上線請刪除此 div) -->
+        <div class="dev-controls">
+            <select id="bmi-simulator" onchange="simulateChange(this.value)">
+                <option value="underweight">模擬：過輕</option>
+                <option value="normal">模擬：正常</option>
+                <option value="overweight" selected>模擬：過重</option>
+                <option value="obese">模擬：肥胖</option>
+            </select>
+        </div>
+
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+        <div class="header-content">
+            <h1 id="plan-slogan">載入中...</h1>
+            <p id="plan-desc">您的專屬健康計畫</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- 卡片 1: 飲食建議 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fas fa-utensils"></i></div>
+                <div class="card-title">飲食建議</div>
+            </div>
+            <div id="diet-content">
+                <!-- JS 動態填充 -->
+            </div>
+        </div>
+
+        <!-- 卡片 2: 運動建議 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fas fa-running"></i></div>
+                <div class="card-title">運動建議</div>
+            </div>
+            <div id="exercise-content">
+                <!-- JS 動態填充 -->
+            </div>
+        </div>
+
+        <!-- 卡片 3: 生活小撇步 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class="fas fa-lightbulb"></i></div>
+                <div class="card-title">生活小撇步</div>
+            </div>
+            <div id="lifestyle-content">
+                <!-- JS 動態填充 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部操作欄 -->
+    <div class="bottom-bar">
+        <button class="btn btn-secondary" onclick="sharePlan()">
+            <i class="fas fa-share-alt"></i> 分享
+        </button>
+        <button class="btn btn-primary" onclick="savePlan()">
+            開始執行此計畫
+        </button>
+    </div>
+
+    <!-- 提示框 -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // --- 資料來源：根據 PRD 5. 內容策略定義 ---
+        const planData = {
+            underweight: {
+                color: '#007AFF', // 藍色
+                bg: '#E6F2FF',
+                slogan: '健康增重，打造線條',
+                desc: '專注於營養攝取與肌肉訓練',
+                diet: {
+                    meals: [
+                        '早餐：全脂牛奶 + 起司 + 堅果。',
+                        '午餐：加入瘦肉（牛/豬/雞）與飯量充足的自助餐。',
+                        '點心：酸奶、香蕉或花生醬吐司。'
+                    ],
+                    avoid: ['空腹節食', '過量生冷食物']
+                },
+                exercise: {
+                    goal: '增加肌肉量，提升體重',
+                    items: [
+                        '肌力訓練：深蹲、俯臥撐 (每週 3 次)。',
+                        '重量訓練：建議尋求教練指導，避免受傷。',
+                        '運動後補充蛋白質與碳水化物。'
+                    ]
+                },
+                lifestyle: [
+                    '規律作息，肌肉生長主要在睡眠時進行。',
+                    '減少過度消耗熱量的活動。'
+                ]
+            },
+            normal: {
+                color: '#34C759', // 綠色
+                bg: '#E8F8E8',
+                slogan: '維持完美，保持活力',
+                desc: '保持均衡飲食與恆定運動',
+                diet: {
+                    meals: [
+                        '早餐：水煮蛋 + 全麥麵包 + 果汁。',
+                        '午餐：均衡攝取六大類食物，蔬菜佔餐盤一半。',
+                        '晚餐：清淡為主，避免過量宵夜。'
+                    ],
+                    avoid: ['高糖飲料', '過度加工食品']
+                },
+                exercise: {
+                    goal: '維持心肺功能與體態',
+                    items: [
+                        '有氧運動：慢跑或游泳 (每週 2-3 次)。',
+                        '伸展運動：瑜珈或皮拉提斯，保持柔軟度。',
+                        '維持每日 6,000 - 8,000 步活動量。'
+                    ]
+                },
+                lifestyle: [
+                    '維持規律的喝水習慣 (每天 2000cc)。',
+                    '定期健康檢查，監測身體數值變化。'
+                ]
+            },
+            overweight: {
+                color: '#FFCC00', // 黃色
+                bg: '#FFF9E6',
+                slogan: '燃燒脂肪，輕盈體態',
+                desc: '控制熱量攝取，增加有氧代謝',
+                diet: {
+                    meals: [
+                        '早餐：全麥麵包 + 無糖豆漿，避免飯糰漢堡。',
+                        '午餐：外食選擇「滷味（不喝湯）」或「自助餐（飯量減半、雙份青菜）」。',
+                        '下午茶：拒絕奶茶，改喝黑咖啡或無糖茶。'
+                    ],
+                    avoid: ['含糖飲料', '油炸物', '精緻甜點']
+                },
+                exercise: {
+                    goal: '每週燃燒額外 1500 卡路里',
+                    items: [
+                        '推薦：下班後快走 30 分鐘，或每週兩次游泳。',
+                        '辦公室運動：利用午休時間爬樓梯。',
+                        '持續性有氧運動是減脂關鍵。'
+                    ]
+                },
+                lifestyle: [
+                    '把車停遠一點，多走幾步路到公司。',
+                    '每天喝足 2000c.c. 水提升代謝。',
+                    '每坐 1 小時起來伸展 5 分鐘。'
+                ]
+            },
+            obese: {
+                color: '#FF3B30', // 紅色
+                bg: '#FFF0F0',
+                slogan: '健康減重，遠離風險',
+                desc: '嚴格飲食控制，保護膝關節',
+                diet: {
+                    meals: [
+                        '早餐：無糖優格 + 水煮蛋。',
+                        '午餐：優質蛋白（魚/豆腐）+ 大量蔬菜，澱類減半。',
+                        '晚餐：僅吃蔬菜沙拉（油醋汁）或少量的湯品。'
+                    ],
+                    avoid: ['所有含糖飲品', '高油鹽醬料', '宵夜']
+                },
+                exercise: {
+                    goal: '降低體重，減少關節負擔',
+                    items: [
+                        '推薦：水中走路（浮力保護膝蓋）。',
+                        '日常：平地快走，避免跑跳衝擊。',
+                        '初期以「能說話的微喘程度」為主。'
+                    ]
+                },
+                lifestyle: [
+                    '諮詢專業醫師或營養師。',
+                    '紀錄每日飲食日誌。',
+                    '調整壓力，避免壓力性暴飲暴食。'
+                ]
+            }
+        };
+
+        // --- 核心邏輯 ---
+
+        function initPage() {
+            // 1. 嘗試從 URL 獲取參數 (實際場景)
+            const urlParams = new URLSearchParams(window.location.search);
+            const bmiStatus = urlParams.get('status') || 'overweight'; // 預設展示過重
+
+            // 2. 渲染頁面
+            renderPlan(bmiStatus);
+            
+            // 3. 同步選擇器 (用於模擬器)
+            document.getElementById('bmi-simulator').value = bmiStatus;
+        }
+
+        function renderPlan(status) {
+            const data = planData[status];
+            if (!data) return;
+
+            // 設定 CSS 變數 (顏色主題)
+            const root = document.documentElement;
+            root.style.setProperty('--theme-color', data.color);
+            root.style.setProperty('--theme-bg', data.bg);
+
+            // 更新 Header
+            document.getElementById('plan-slogan').textContent = data.slogan;
+            document.getElementById('plan-desc').textContent = data.desc;
+
+            // 更新飲食內容
+            let dietHtml = `
+                <div class="sub-section">
+                    <span class="sub-title">三餐建議：</span>
+                    <ul class="advice-list">
+                        ${data.diet.meals.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="sub-section">
+                    <span class="sub-title">忌口清單：</span>
+                    <div>
+                        ${data.diet.avoid.map(item => `<span class="tag danger">✕ ${item}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('diet-content').innerHTML = dietHtml;
+
+            // 更新運動內容
+            let exerciseHtml = `
+                <div class="sub-section">
+                    <span class="tag" style="background:${data.bg}; color:${data.color}">目標：${data.exercise.goal}</span>
+                </div>
+                <ul class="advice-list">
+                    ${data.exercise.items.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+            `;
+            document.getElementById('exercise-content').innerHTML = exerciseHtml;
+
+            // 更新生活小撇步
+            let lifestyleHtml = `
+                <ul class="advice-list">
+                    ${data.lifestyle.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+            `;
+            document.getElementById('lifestyle-content').innerHTML = lifestyleHtml;
+        }
+
+        // --- 互動功能 ---
+
+        function simulateChange(status) {
+            // 模擬頁面切換效果
+            document.querySelector('main').style.opacity = '0';
+            setTimeout(() => {
+                renderPlan(status);
+                document.querySelector('main').style.opacity = '1';
+            }, 200);
+        }
+
+        function goBack() {
+            // 實際上線: history.back();
+            alert("返回上一頁 (BMI 測量頁)");
+        }
+
+        function savePlan() {
+            showToast("✅ 已加入「我的計畫」，加油！");
+            // 數據埋點邏輯: log('save_plan', {status: currentStatus})
+        }
+
+        function sharePlan() {
+            // 實際上線: 呼叫原生分享或 Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: '我的健康方案',
+                    text: '我剛測出了 BMI，這是系統推薦的專屬健康方案！',
+                    url: window.location.href
+                });
+            } else {
+                showToast("📋 連結已複製，去分享給朋友吧！");
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // 頁面載入時執行
+        window.addEventListener('DOMContentLoaded', initPage);
+
+    </script>
+</body>
+</html>

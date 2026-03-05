@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI 健康測量</title>
+    <style>
+        :root {
+            /* PRD 5. UI/UX 設計規範：白色、藍色為主色調 */
+            --primary-color: #007AFF; /* iOS Blue */
+            --bg-color: #F5F7FA;
+            --card-bg: #FFFFFF;
+            --text-main: #333333;
+            --text-secondary: #666666;
+            --error-color: #FF3B30;
+            
+            /* 狀態顏色定義 */
+            --status-blue: #007AFF;   /* 過輕 */
+            --status-green: #34C759;  /* 正常 */
+            --status-yellow: #FFCC00; /* 過重 */
+            --status-red: #FF3B30;    /* 肥胖 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            padding: 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 輸入區域 */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 18px;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.3s;
+            -moz-appearance: textfield; /* Firefox remove arrows */
+        }
+        
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        .unit {
+            position: absolute;
+            right: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* 性別選擇 (可選) */
+        .gender-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .gender-option {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .gender-option.active {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 122, 255, 0.05);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* 錯誤訊息 */
+        .error-msg {
+            color: var(--error-color);
+            font-size: 12px;
+            margin-top: 6px;
+            display: none; /* 預設隱藏 */
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* 按鈕 */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            background-color: #CCCCCC;
+            cursor: not-allowed;
+        }
+
+        /* 結果區域 */
+        #result-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #F0F0F0;
+            display: none; /* 預設隱藏 */
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+            background: #F9F9F9;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .bmi-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .bmi-label {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+        }
+
+        .advice-text {
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* 視覺化反饋條 */
+        .scale-bar {
+            height: 8px;
+            width: 100%;
+            background: linear-gradient(to right, 
+                var(--status-blue) 0%, var(--status-blue) 20%, 
+                var(--status-green) 20%, var(--status-green) 45%,
+                var(--status-yellow) 45%, var(--status-yellow) 60%,
+                var(--status-red) 60%, var(--status-red) 100%);
+            border-radius: 4px;
+            margin: 20px 0 10px 0;
+            position: relative;
+        }
+
+        .scale-marker {
+            position: absolute;
+            top: -6px;
+            width: 4px;
+            height: 20px;
+            background-color: #333;
+            border-radius: 2px;
+            transform: translateX(-50%);
+            transition: left 1s ease-out;
+            left: 0%; /* JS 會控制這個 */
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>測出 BMI</h1>
+            <p>了解身體狀態，邁向健康生活</p>
+        </header>
+
+        <main>
+            <!-- 性別選擇 (可選) -->
+            <div class="input-label">性別 (選填)</div>
+            <div class="gender-group">
+                <div class="gender-option" id="gender-male" onclick="selectGender('male')">男</div>
+                <div class="gender-option" id="gender-female" onclick="selectGender('female')">女</div>
+            </div>
+
+            <!-- 身高輸入 -->
+            <div class="input-group">
+                <label class="input-label" for="height">身高</label>
+                <div class="input-wrapper">
+                    <input type="number" id="height" placeholder="例如：170" oninput="clearError('height-error')">
+                    <span class="unit">cm</span>
+                </div>
+                <div id="height-error" class="error-msg">請輸入 50 ~ 250 之間的有效數值</div>
+            </div>
+
+            <!-- 體重輸入 -->
+            <div class="input-group">
+                <label class="input-label" for="weight">體重</label>
+                <div class="input-wrapper">
+                    <input type="number" id="weight" placeholder="例如：65.5" step="0.1" oninput="clearError('weight-error')">
+                    <span class="unit">kg</span>
+                </div>
+                <div id="weight-error" class="error-msg">請輸入 20 ~ 300 之間的有效數值</div>
+            </div>
+
+            <!-- 計算按鈕 -->
+            <button class="btn" onclick="calculateBMI()">開始測量</button>
+
+            <!-- 結果顯示區域 -->
+            <section id="result-section">
+                <div class="result-card" id="result-card-bg">
+                    <div class="bmi-value" id="bmi-value-display">0.0</div>
+                    <div class="bmi-label" id="bmi-status-label">--</div>
+                    <p class="advice-text" id="advice-text">--</p>
+                </div>
+
+                <!-- 視覺化反饋條 -->
+                <div class="scale-bar">
+                    <div class="scale-marker" id="scale-marker"></div>
+                </div>
+
+                <button class="btn btn-outline" onclick="showDietAdvice()">查看適合我的飲食建議</button>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let currentGender = ''; // 儲存用戶選擇的性別
+
+        // 性別選擇邏輯
+        function selectGender(gender) {
+            currentGender = gender;
+            document.querySelectorAll('.gender-option').forEach(el => el.classList.remove('active'));
+            if(gender === 'male') {
+                document.getElementById('gender-male').classList.add('active');
+            } else {
+                document.getElementById('gender-female').classList.add('active');
+            }
+        }
+
+        // 清除錯誤訊息
+        function clearError(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+
+        // 顯示錯誤訊息
+        function showError(elementId) {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            // 重新觸發動畫
+            el.style.animation = 'none';
+            el.offsetHeight; /* trigger reflow */
+            el.style.animation = 'shake 0.3s ease-in-out';
+        }
+
+        // 核心計算功能
+        function calculateBMI() {
+            const heightInput = document.getElementById('height').value;
+            const weightInput = document.getElementById('weight').value;
+            const resultSection = document.getElementById('result-section');
+            const heightError = 'height-error';
+            const weightError = 'weight-error';
+
+            // 1. 基礎驗證：空值檢查
+            if (!heightInput || !weightInput) {
+                if (!heightInput) showError(heightError);
+                if (!weightInput) showError(weightError);
+                resultSection.style.display = 'none';
+                return;
+            }
+
+            const heightCm = parseFloat(heightInput);
+            const weightKg = parseFloat(weightInput);
+
+            // 2. 範圍驗證 (邊緣案例處理)
+            let hasError = false;
+            
+            // 身高限制 50 ~ 250
+            if (isNaN(heightCm) || heightCm < 50 || heightCm > 250) {
+                showError(heightError);
+                hasError = true;
+            }
+            
+            // 體重限制 20 ~ 300
+            if (isNaN(weightKg) || weightKg < 20 || weightKg > 300) {
+                showError(weightError);
+                hasError = true;
+            }
+
+            if (hasError) {
+                resultSection.style.display = 'none';
+                return;
+            }
+
+            // 3. 計算邏輯
+            const heightM = heightCm / 100;
+            const bmi = weightKg / (heightM * heightM);
+            const bmiFixed = bmi.toFixed(1);
+
+            // 4. 判定標準 (亞洲人/台灣標準)
+            let status = '';
+            let color = '';
+            let advice = '';
+            let markerPercent = 0; // 用於視覺條的定位 (0% - 100%)
+
+            if (bmi < 18.5) {
+                status = '過輕';
+                color = 'var(--status-blue)';
+                advice = '體重過輕，建議增加營養攝取，並配合適度運動增強體魄。';
+                // Mapping BMI range 10~18.5 to 0~20% on bar
+                markerPercent = 10; 
+            } else if (bmi >= 18.5 && bmi < 24) {
+                status = '正常';
+                color = 'var(--status-green)';
+                advice = '體重正常，請維持目前健康的飲食習慣與生活型態！';
+                // Mapping BMI 18.5~24 to 20~45%
+                markerPercent = 20 + ((bmi - 18.5) / (24 - 18.5)) * 25;
+            } else if (bmi >= 24 && bmi < 27) {
+                status = '過重';
+                color = 'var(--status-yellow)';
+                advice = '體重過重，建議控制飲食熱量並增加身體活動量。';
+                // Mapping BMI 24~27 to 45~60%
+                markerPercent = 45 + ((bmi - 24) / (27 - 24)) * 15;
+            } else if (bmi >= 27 && bmi < 30) {
+                status = '輕度肥胖';
+                color = 'var(--status-red)';
+                advice = '輕度肥胖，建議諮詢專業營養師，制定專屬減重計畫。';
+                markerPercent = 60 + ((bmi - 27) / (30 - 27)) * 10;
+            } else if (bmi >= 30 && bmi < 35) {
+                status = '中度肥胖';
+                color = 'var(--status-red)';
+                advice = '中度肥胖，健康亮紅燈！請積極改變飲食習慣並尋求醫療建議。';
+                markerPercent = 70 + ((bmi - 30) / (35 - 30)) * 10;
+            } else {
+                status = '重度肥胖';
+                color = 'var(--status-red)';
+                advice = '重度肥胖，強烈建議尋求醫療專業協助，以避免心血管疾病風險。';
+                markerPercent = 85; // Cap at 85% visually
+            }
+
+            // 5. 更新 UI
+            resultSection.style.display = 'block';
+            
+            // 設定文字與顏色
+            const labelEl = document.getElementById('bmi-status-label');
+            labelEl.textContent = status;
+            labelEl.style.backgroundColor = color;
+            
+            document.getElementById('advice-text').textContent = advice;
+
+            // 更新視覺化標記位置
+            document.getElementById('scale-marker').style.left = markerPercent + '%';
+
+            // 數字滾動動畫
+            animateValue("bmi-value-display", 0, bmi, 1000);
+        }
+
+        // 數字滾動動畫函數
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                
+                // 緩動效果
+                const easeProgress = 1 - (1 - progress) * (1 - progress);
+                
+                const currentVal = (progress * (end - start) + start);
+                obj.innerHTML = currentVal.toFixed(1);
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // 模擬跳轉至飲食建議頁
+        function showDietAdvice() {
+            // 在實際 App 中，這裡會是 window.location.href = '/diet-advice';
+            // 這裡我們用簡單的 alert 或 console log 模擬
+            const bmi = document.getElementById('bmi-value-display').innerText;
+            const gender = currentGender ? (currentGender === 'male' ? '先生' : '小姐') : '';
+            alert(`正在為您${gender}生成針對 BMI ${bmi} 的專屬飲食建議... \n(此處將跳轉至飲食推薦頁)`);
+        }
+    </script>
+</body>
+</html>
