@@ -91,6 +91,8 @@
             outline: none;
             transition: border-color 0.3s;
             -moz-appearance: textfield; /* Firefox remove arrows */
+            -webkit-appearance: textfield; /* Safari/Chrome remove arrows */
+            appearance: textfield; /* Standard property */
         }
         
         input[type="number"]::-webkit-outer-spin-button,
@@ -397,7 +399,10 @@
                 color = 'var(--status-blue)';
                 advice = '體重過輕，建議增加營養攝取，並配合適度運動增強體魄。';
                 // Mapping BMI range 10~18.5 to 0~20% on bar
-                markerPercent = 10; 
+                const minBMI = 10;
+                const maxBMI = 18.5;
+                const clampedBMI = Math.max(minBMI, bmi);
+                markerPercent = ((clampedBMI - minBMI) / (maxBMI - minBMI)) * 20;
             } else if (bmi >= 18.5 && bmi < 24) {
                 status = '正常';
                 color = 'var(--status-green)';
@@ -456,7 +461,7 @@
                 const easeProgress = 1 - (1 - progress) * (1 - progress);
                 
                 const currentVal = (progress * (end - start) + start);
-                obj.innerHTML = currentVal.toFixed(1);
+                obj.textContent = currentVal.toFixed(1);
                 
                 if (progress < 1) {
                     window.requestAnimationFrame(step);
