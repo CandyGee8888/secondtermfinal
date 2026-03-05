@@ -467,11 +467,23 @@
 
         // 模擬跳轉至飲食建議頁
         function showDietAdvice() {
-            // 在實際 App 中，這裡會是 window.location.href = '/diet-advice';
-            // 這裡我們用簡單的 alert 或 console log 模擬
-            const bmi = document.getElementById('bmi-value-display').innerText;
-            const gender = currentGender ? (currentGender === 'male' ? '先生' : '小姐') : '';
-            alert(`正在為您${gender}生成針對 BMI ${bmi} 的專屬飲食建議... \n(此處將跳轉至飲食推薦頁)`);
+            // 獲取當前 BMI 狀態標籤
+            const statusLabel = document.getElementById('bmi-status-label').textContent;
+            
+            // 將中文狀態映射到英文鍵值 (用於 URL 參數)
+            let statusKey = 'overweight'; // 預設值
+            if (statusLabel === '過輕') {
+                statusKey = 'underweight';
+            } else if (statusLabel === '正常') {
+                statusKey = 'normal';
+            } else if (statusLabel === '過重') {
+                statusKey = 'overweight';
+            } else if (statusLabel.includes('肥胖')) {
+                statusKey = 'obese';
+            }
+            
+            // 跳轉到健康方案推薦頁面，並傳遞狀態參數
+            window.location.href = `thrid.html?status=${statusKey}`;
         }
     </script>
 </body>
